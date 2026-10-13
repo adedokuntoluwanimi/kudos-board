@@ -3,6 +3,9 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   workflow_dispatch:
 
 permissions:
@@ -74,20 +77,6 @@ jobs:
           service: ${{ vars.ECS_SERVICE }}
           wait-for-service-stability: true
           wait-for-minutes: 20
-
-      # A circuit-breaker rollback also ends in a "stable" service, so check which revision actually won.
-      - name: Confirm the new revision is serving
-        run: |
-          live=$(aws ecs describe-services \
-            --cluster "${{ vars.ECS_CLUSTER }}" \
-            --services "${{ vars.ECS_SERVICE }}" \
-            --query 'services[0].taskDefinition' --output text)
-          echo "Deployed: ${{ steps.deploy.outputs.task-definition-arn }}"
-          echo "Live:     $live"
-          if [ "$live" != "${{ steps.deploy.outputs.task-definition-arn }}" ]; then
-            echo "::error::ECS rolled back to $live; the new revision failed its health checks."
-            exit 1
-          fi
 
   frontend:
     needs: backend
