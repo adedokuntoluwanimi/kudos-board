@@ -2,9 +2,11 @@
 
 The Kudos Board is a small public thank-you app built for the [AltSchool Project 7 brief](https://docs.google.com/document/d/1oY5sj65m7mdar7Fp3WSiI-hbV3hb70GFg2ZVsl-uuqU/edit?tab=t.0#heading=h.hjtjddg80460). At Checkpoint 2 both components run on AWS. Terraform in [`infra/`](infra/) provisions all of it, and [GitHub Actions](.github/workflows/deploy.yml) deploys every push to `main` with no console steps.
 
-**Live site:** https://ds422jrm7fnzg.cloudfront.net
+> **Status: shut down on 14 October 2026.** Everything in `infra/` was removed with `terraform destroy` to stop charges. The GitHub Actions `Deploy` workflow is disabled. Only the Terraform state bucket remains, at near-zero cost. To bring it back, follow [Bring the stack back up](#bring-the-stack-back-up). The site URL, load balancer name and CloudFront ID will all change.
 
-## Current deployment
+## Deployment at Checkpoint 2 (before shutdown)
+
+**Site URL while live:** https://ds422jrm7fnzg.cloudfront.net (no longer resolves to the app)
 
 | Resource | Value |
 | --- | --- |
@@ -88,6 +90,36 @@ Notes:
 - **`ignore_changes`:** the ECS service ignores `task_definition` changes, so Terraform never rolls back an image the pipeline deployed. Infrastructure changes to the task definition are picked up on the next pipeline run, which always builds on the latest revision.
 - **Deploy role trust:** the role trusts GitHub's immutable OIDC subject for this repo (`repo:adedokuntoluwanimi@203470780/kudos-board@1418083261:ref:refs/heads/main`). New repositories receive that format, and the plain `repo:owner/name` form was rejected with `Not authorized to perform sts:AssumeRoleWithWebIdentity`.
 
+## Bring the stack back up
+
+1. Apply the stack (about 6 minutes, mostly CloudFront):
+
+   ```powershell
+   cd infra; terraform init; terraform apply
+   ```
+
+   The state bucket from `infra/bootstrap` still exists. If it was deleted, apply `infra/bootstrap` first.
+2. Point GitHub at the new resources. The CloudFront ID and the bucket and service names come from the new outputs:
+
+   ```powershell
+   $o = terraform output -json | ConvertFrom-Json
+   gh variable set CLOUDFRONT_DISTRIBUTION_ID --body $o.distribution_id.value
+   gh variable set AWS_DEPLOY_ROLE_ARN --body $o.deploy_role_arn.value
+   gh variable set ECR_REPOSITORY_URL --body $o.ecr_repository_url.value
+   gh variable set SITE_BUCKET --body $o.site_bucket.value
+   ```
+
+   `ECS_CLUSTER`, `ECS_SERVICE`, `ECS_TASK_FAMILY`, `API_URL_PARAMETER` and `AWS_REGION` keep the same values.
+3. Re-enable and run the pipeline. The first run pushes a real image; until then the service shows unhealthy.
+
+   ```powershell
+   gh workflow enable Deploy
+   gh workflow run Deploy
+   ```
+4. Open the new `site_url` output and post a kudos. The new DynamoDB table starts empty.
+
+To shut it down again, run `terraform destroy` in `infra/` and then `gh workflow disable Deploy`.
+
 ## CI/CD pipeline
 
 [`deploy.yml`](.github/workflows/deploy.yml) runs on every push to `main` (docs-only pushes are skipped) and can also be started manually:
@@ -142,7 +174,7 @@ In a second terminal: `cd frontend; $env:API_URL = 'http://localhost:3000'; node
 
 ## Manual test checklist (Checkpoint 2)
 
-Checked on 13–14 October 2026 against `https://ds422jrm7fnzg.cloudfront.net`:
+Checked on 13–14 October 2026 against `https://ds422jrm7fnzg.cloudfront.net`, before shutdown:
 
 | Check | Expected | Observed |
 | --- | --- | --- |
@@ -193,7 +225,7 @@ Run the unit tests with `cd backend; npm test`. They cover the API contract, val
 | Public IPv4 addresses (ALB ×2, task ×1) | about $11 |
 | CloudFront, S3, DynamoDB on demand, SSM standard, SNS, ECR, CloudWatch | under $2 at demo traffic |
 
-That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 addresses. In production, the main cost growth would come from more Fargate tasks and DynamoDB request volume. Running `terraform destroy` in `infra/` removes everything except the state bucket.
+That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 addresses. In production, the main cost growth would come from more Fargate tasks and DynamoDB request volume. Running `terraform destroy` in `infra/` removes everything except the state bucket. That was done on 14 October 2026, so the current cost is only the state bucket's few kilobytes in S3.
 
 ## Six-week schedule
 
@@ -201,7 +233,7 @@ That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 ad
 2. **Week 2:** Draw the architecture, provision the core AWS path by hand, and demo ALB → ECS → DynamoDB. **Done (Checkpoint 1).**
 3. **Week 3:** Translate the resources to Terraform; deploy the static frontend on private S3 and CloudFront. **Done.**
 4. **Week 4:** Add push-triggered deployment; demonstrate a live update and a failure with recovery. **Done (Checkpoint 2).**
-5. **Week 5:** Re-run the failure demo to capture the alarm firing; review IAM, HTTPS and cost; consider stretch goals (staging environment, VPC endpoints).
+5. **Week 5:** Bring the stack back up (it was shut down after Checkpoint 2), then re-run the failure demo to capture the alarm firing; review IAM, HTTPS and cost; consider stretch goals (staging environment, VPC endpoints).
 6. **Week 6:** Final demo, AI-usage write-up, cost note, security review and retrospective.
 
 ## What was harder than expected
@@ -220,4 +252,4 @@ That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 ad
 
 - Checkpoint 1 screenshots: `docs/evidence/01`–`06`.
 - Checkpoint 2: the GitHub Actions runs linked above, plus [`docs/evidence/checkpoint2-failure-probe.log`](docs/evidence/checkpoint2-failure-probe.log) (site health probes during the failed deploy).
-- Still to add as screenshots: the CloudFront site in a browser, the green and red pipeline runs, ECS rollback events, and the alarm in `ALARM`.
+- Still to add as screenshots: the CloudFront site in a browser, the green and red pipeline runs, ECS rollback events, and the alarm in `ALARM`. The stack is shut down, so the site, ECS and alarm screenshots need it brought back up first. The GitHub Actions run pages stay available.
