@@ -13,6 +13,6 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-createApp({ store: createKudosStore(TABLE_NAME), allowedOrigins }).listen(8080, "0.0.0.0", () => {
-  console.log("Kudos Board API listening on port 8080");
+createApp({ store: createKudosStore(TABLE_NAME), allowedOrigins }).listen(PORT, "0.0.0.0", () => {
+  console.log(`Kudos Board API listening on port ${PORT}`);
 });
