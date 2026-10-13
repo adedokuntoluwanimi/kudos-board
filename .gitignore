@@ -1,0 +1,9 @@
+node_modules/
+.env
+frontend/config.js
+.aws/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan

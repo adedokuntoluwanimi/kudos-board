@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kudos Board</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./config.js"></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">A little appreciation goes a long way</p>
+        <h1>Kudos Board</h1>
+        <p>Thank a teammate for something they did.</p>
+      </header>
+
+      <section aria-labelledby="write-heading">
+        <h2 id="write-heading">Send kudos</h2>
+        <form id="kudos-form">
+          <div class="names">
+            <label>From <input name="from" maxlength="50" required autocomplete="name"></label>
+            <label>To <input name="to" maxlength="50" required></label>
+          </div>
+          <label>Message <textarea name="message" maxlength="280" rows="4" required></textarea></label>
+          <p id="form-error" class="error" role="alert" hidden></p>
+          <button type="submit">Post kudos</button>
+        </form>
+      </section>
+
+      <section aria-labelledby="recent-heading">
+        <h2 id="recent-heading">Recent kudos</h2>
+        <p id="list-status" role="status">Loading kudos…</p>
+        <ul id="kudos-list" aria-label="Recent kudos"></ul>
+      </section>
+    </main>
+  </body>
+</html>

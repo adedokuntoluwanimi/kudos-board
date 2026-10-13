@@ -1,0 +1,19 @@
+{
+  "name": "kudos-board-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
