@@ -9,10 +9,10 @@ variable "name" {
   default     = "kudos"
 }
 
-variable "github_repo" {
-  description = "owner/repo allowed to assume the deploy role from its main branch."
+variable "github_sub_prefix" {
+  description = "OIDC subject prefix of the repo allowed to deploy. This repo uses GitHub's immutable form (owner@id/repo@id); read it with: gh api repos/OWNER/REPO/actions/oidc/customization/sub"
   type        = string
-  default     = "adedokuntoluwanimi/kudos-board"
+  default     = "repo:adedokuntoluwanimi@203470780/kudos-board@1418083261"
 }
 
 variable "container_port" {
