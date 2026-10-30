@@ -1,0 +1,9 @@
+# AI usage — Project 7 Kudos Board
+
+See the full Checkpoint 3 talk notes in `docs/checkpoint3-talk.md`.
+
+**What the AI assistant generated:** the Express API (`/health`, `/kudos` GET/POST with validation) and the plain static frontend (list + form) from the fixed brief spec.
+
+**What I fixed or owned:** Terraform for the full AWS path; GitHub Actions OIDC deploy (immutable subject trust); CloudFront same-origin routing for API paths to avoid mixed content; ECS circuit-breaker failure demo and recovery; least-privilege IAM; shutdown/restore runbooks; and verification that the live app matches the spec (tests + manual checklist in the README).
+
+**What I deliberately did not do:** add product features beyond the brief. The assignment is the pipeline and infrastructure, not a bigger app.

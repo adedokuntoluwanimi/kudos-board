@@ -1,17 +1,55 @@
-# Project 7: Kudos Board — Checkpoint 2
+# Project 7: Kudos Board — Checkpoint 3
 
-The Kudos Board is a small public thank-you app built for the [AltSchool Project 7 brief](https://docs.google.com/document/d/1oY5sj65m7mdar7Fp3WSiI-hbV3hb70GFg2ZVsl-uuqU/edit?tab=t.0#heading=h.hjtjddg80460). At Checkpoint 2 both components run on AWS. Terraform in [`infra/`](infra/) provisions all of it, and [GitHub Actions](.github/workflows/deploy.yml) deploys every push to `main` with no console steps.
+The Kudos Board is a small public thank-you app built for the [AltSchool Project 7 brief](https://docs.google.com/document/d/1oY5sj65m7mdar7Fp3WSiI-hbV3hb70GFg2ZVsl-uuqU/edit?tab=t.0#heading=h.hjtjddg80460). Both components run on AWS. Terraform in [`infra/`](infra/) provisions all of it, and [GitHub Actions](.github/workflows/deploy.yml) deploys every push to `main` with no console steps.
 
-> **Status: shut down on 14 October 2026.** Everything in `infra/` was removed with `terraform destroy` to stop charges. The GitHub Actions `Deploy` workflow is disabled. Only the Terraform state bucket remains, at near-zero cost. To bring it back, follow [Bring the stack back up](#bring-the-stack-back-up). The site URL, load balancer name and CloudFront ID will all change.
+> **Status: live for Checkpoint 3 (30 October 2026).** Site: https://d2pb1fsz4ljq3u.cloudfront.net — CloudFront `E8U5DU2Z1LNKV`. Talk notes (AI usage, cost, security, retrospective): [`docs/checkpoint3-talk.md`](docs/checkpoint3-talk.md). Demo script: [`docs/checkpoint3-demo-script.md`](docs/checkpoint3-demo-script.md). Post-demo teardown: [`docs/checkpoint3-shutdown.md`](docs/checkpoint3-shutdown.md).
 
-## Deployment at Checkpoint 2 (before shutdown)
+Short AI summary also lives in [`explanation`](explanation).
 
-**Site URL while live:** https://ds422jrm7fnzg.cloudfront.net (no longer resolves to the app)
+## Current deployment (Checkpoint 3)
+
+**Live site:** https://d2pb1fsz4ljq3u.cloudfront.net
 
 | Resource | Value |
 | --- | --- |
 | AWS account / region | Terracode Analytics `996255343850`, `eu-west-1` |
-| Site and API | CloudFront `E2LTOJ3VUES369` → `https://ds422jrm7fnzg.cloudfront.net` |
+| Site and API | CloudFront `E8U5DU2Z1LNKV` → `https://d2pb1fsz4ljq3u.cloudfront.net` |
+| Frontend | Private S3 bucket `kudos-site-996255343850-eu-west-1`, read only by CloudFront through Origin Access Control |
+| API | ECS Fargate service `kudos-api` on cluster `kudos-cluster` |
+| Load balancer | `kudos-alb` on HTTP port 80, reachable only from CloudFront's origin-facing IP range |
+| Database | DynamoDB `kudos-kudos` |
+| Terraform state | S3 `kudos-tfstate-996255343850-eu-west-1` |
+| CI/CD | GitHub Actions Deploy enabled; OIDC role `kudos-github-deploy-role` |
+
+## Checkpoint 2 deployment before shutdown
+
+**Former site (offline):** https://d362xzf5cx26x4.cloudfront.net
+
+### Final shutdown — 16 October 2026
+
+- Disabled the deployment workflow and confirmed recent runs had completed before destruction.
+- Terraform applied a reviewed destroy plan: 41 resources destroyed, including ECS, ECR images, DynamoDB data, CloudFront, ALB, public IPs, application logs, alarms, SSM configuration, and the project VPC.
+- Saved local ignored state backups (`infra/pre-shutdown.tfstate` and `infra/post-shutdown.tfstate`), removed 36 state-object versions/delete markers, and destroyed the 4-resource bootstrap stack. No remote state bucket remains.
+- Removed legacy CodeBuild and StartTech EKS log groups in Ireland, plus four leftover application/service-event log groups in Northern Virginia.
+- Scanned all 17 enabled regions for compute, public IPs, load balancers, storage, databases, backups, container services, logs, alarms, and other hosting resources. No additional running workloads or chargeable storage were found after cleanup. Two remaining KMS keys in `us-east-1` are AWS-managed. Historical resource-tag entries can outlive deleted resources.
+- Additional checks covered global S3, CloudFront, Route 53 hosted zones, Savings Plans, and active EC2 reservations. Some App Runner/Lightsail regional endpoints are unavailable; App Runner in supported regions reports that the account has no service subscription. Route 53 Domains rejects this Free Tier account as unsupported. These checks do not constitute a guarantee about every possible AWS product or future billing adjustment; prior usage can still appear later.
+- During the checkpoint rehearsal, the user confirmed that a code push triggered the pipeline and the changed subtitle appeared on the live site. The user also showed a saved kudos. These demonstrations occurred before final shutdown.
+- Leave deployment disabled. Restore only when another live session is explicitly needed; bootstrap storage must now be recreated first.
+
+### Restoration verification — 16 October 2026
+
+- Terraform validation passed; apply added 41 resources, changed 0 and destroyed 0.
+- All 4 local API tests passed. GitHub Actions run [38927087944](https://github.com/adedokuntoluwanimi/kudos-board/actions/runs/38927087944) passed its test, backend and frontend jobs.
+- ECS service `kudos-api` reached steady state with one running task, no pending tasks, and task definition `kudos-api:8`. Its image is tagged `e85881374e7ea045bf98a82b00a00ccc2279cda9`.
+- The ALB target is healthy on port 3000. `/health`, `/kudos`, `/config.js`, `/app.js` and `/style.css` returned HTTP 200. API CORS permits the new site origin; frontend configuration points to that origin.
+- Both CloudWatch alarms reported `OK`. Fresh application logs showed startup on port 3000 and no application errors.
+- Browser rendering and the empty-board state were verified; [site screenshot](docs/evidence/checkpoint2-restored-site-2026-10-16.png). Browser form-fill and submit tool actions were declined, so posting and reload persistence were not reverified during restoration. The browser reported a missing `/favicon.ico` (403).
+- GitHub deployment variables now match the restored infrastructure. The previous CloudFront URL below is retained only in historical evidence.
+
+| Resource | Value |
+| --- | --- |
+| AWS account / region | Terracode Analytics `996255343850`, `eu-west-1` |
+| Site and API | CloudFront `E3W1YYK9WUQ4W` → `https://d362xzf5cx26x4.cloudfront.net` |
 | Frontend | Private S3 bucket `kudos-site-996255343850-eu-west-1`, read only by CloudFront through Origin Access Control |
 | API | ECS Fargate service `kudos-api` on cluster `kudos-cluster`; 1 task with 0.25 vCPU and 512 MiB on port 3000; deployment circuit breaker with rollback |
 | Load balancer | `kudos-alb` on HTTP port 80, reachable only from CloudFront's origin-facing IP range; target group `kudos-api-tg` checks `/health` |
@@ -98,7 +136,7 @@ Notes:
    cd infra; terraform init; terraform apply
    ```
 
-   The state bucket from `infra/bootstrap` still exists. If it was deleted, apply `infra/bootstrap` first.
+   The state bucket was deleted during the final shutdown. First run `terraform init` and `terraform apply` in `infra/bootstrap`, then return to `infra/` to initialize and apply the main stack.
 2. Point GitHub at the new resources. The CloudFront ID and the bucket and service names come from the new outputs:
 
    ```powershell
@@ -118,7 +156,7 @@ Notes:
    ```
 4. Open the new `site_url` output and post a kudos. The new DynamoDB table starts empty.
 
-To shut it down again, run `terraform destroy` in `infra/` and then `gh workflow disable Deploy`.
+To shut it down again, disable `Deploy` before running `terraform destroy` in `infra/`. To remove state-storage costs too, save a local state backup, delete all object versions and delete markers from the state bucket after the main destroy completes, then run `terraform destroy` in `infra/bootstrap`.
 
 ## CI/CD pipeline
 
@@ -212,7 +250,7 @@ Run the unit tests with `cd backend; npm test`. They cover the API contract, val
 **Runbook for a red deploy:**
 1. Open the failed Actions run and note the commit.
 2. In ECS, check the `kudos-api` service events for "rolling back", then read the stopped task's reason and the `/ecs/kudos-api` logs.
-3. Confirm that the site is still being served: `GET https://ds422jrm7fnzg.cloudfront.net/health`.
+3. Confirm that the site is still being served: `GET https://d362xzf5cx26x4.cloudfront.net/health` (use the latest Terraform `site_url` after any future restoration).
 4. Revert the commit (`git revert <sha>; git push`), or push a fix. The pipeline redeploys.
 5. Confirm that the run is green and both alarms show `OK`.
 
@@ -225,7 +263,7 @@ Run the unit tests with `cd backend; npm test`. They cover the API contract, val
 | Public IPv4 addresses (ALB ×2, task ×1) | about $11 |
 | CloudFront, S3, DynamoDB on demand, SSM standard, SNS, ECR, CloudWatch | under $2 at demo traffic |
 
-That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 addresses. In production, the main cost growth would come from more Fargate tasks and DynamoDB request volume. Running `terraform destroy` in `infra/` removes everything except the state bucket. That was done on 14 October 2026, so the current cost is only the state bucket's few kilobytes in S3.
+That is roughly $40 a month while running. The biggest cost is the ALB plus its public IPv4 addresses. In production, the main cost growth would come from more Fargate tasks and DynamoDB request volume. The stack was restored and then fully destroyed on 16 October 2026 after the checkpoint, including bootstrap state storage. No project infrastructure remains running. Charges for usage before deletion may still be posted later.
 
 ## Six-week schedule
 
@@ -233,8 +271,8 @@ That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 ad
 2. **Week 2:** Draw the architecture, provision the core AWS path by hand, and demo ALB → ECS → DynamoDB. **Done (Checkpoint 1).**
 3. **Week 3:** Translate the resources to Terraform; deploy the static frontend on private S3 and CloudFront. **Done.**
 4. **Week 4:** Add push-triggered deployment; demonstrate a live update and a failure with recovery. **Done (Checkpoint 2).**
-5. **Week 5:** Bring the stack back up (it was shut down after Checkpoint 2), then re-run the failure demo to capture the alarm firing; review IAM, HTTPS and cost; consider stretch goals (staging environment, VPC endpoints).
-6. **Week 6:** Final demo, AI-usage write-up, cost note, security review and retrospective.
+5. **Week 5:** Checkpoint rehearsal completed on 16 October 2026, followed by full shutdown. Capturing the revised alarm firing remains deferred; stretch goals (staging environment, VPC endpoints) remain optional.
+6. **Week 6 / Checkpoint 3:** Restore for the final live demo and pipeline walkthrough; AI-usage write-up, cost note, security summary, and retrospective in [`docs/checkpoint3-talk.md`](docs/checkpoint3-talk.md).
 
 ## What was harder than expected
 
@@ -252,4 +290,6 @@ That is roughly $40 a month. The biggest cost is the ALB plus its public IPv4 ad
 
 - Checkpoint 1 screenshots: `docs/evidence/01`–`06`.
 - Checkpoint 2: the GitHub Actions runs linked above, plus [`docs/evidence/checkpoint2-failure-probe.log`](docs/evidence/checkpoint2-failure-probe.log) (site health probes during the failed deploy).
-- Still to add as screenshots: the CloudFront site in a browser, the green and red pipeline runs, ECS rollback events, and the alarm in `ALARM`. The stack is shut down, so the site, ECS and alarm screenshots need it brought back up first. The GitHub Actions run pages stay available.
+- Restored CloudFront site screenshot (16 Oct): [`checkpoint2-restored-site-2026-10-16.png`](docs/evidence/checkpoint2-restored-site-2026-10-16.png).
+- Checkpoint 3 restore (30 Oct): live site [`checkpoint3-live-site-2026-10-30.png`](docs/evidence/checkpoint3-live-site-2026-10-30.png), posted kudos [`checkpoint3-live-kudos-posted-2026-10-30.png`](docs/evidence/checkpoint3-live-kudos-posted-2026-10-30.png), green Deploy run [`checkpoint3-deploy-run-41076337702.png`](docs/evidence/checkpoint3-deploy-run-41076337702.png) ([Actions run 41076337702](https://github.com/adedokuntoluwanimi/kudos-board/actions/runs/41076337702)).
+- Soft gap remaining: alarm in `ALARM` and ECS rollback event screenshots (narrate CP2 failure run [38482136609](https://github.com/adedokuntoluwanimi/kudos-board/actions/runs/38482136609) unless facilitators ask for a fresh break). Architecture diagram source: [`docs/kudos-board-checkpoint2.drawio`](docs/kudos-board-checkpoint2.drawio) (export PNG from draw.io for slides; CLI export not available on this machine).
