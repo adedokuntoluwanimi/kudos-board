@@ -1,6 +1,8 @@
 # Post–Checkpoint 3 shutdown
 
-Run this **after** the demo when you authorize teardown. The stack is intentionally left **live** for Checkpoint 3 at `https://d2pb1fsz4ljq3u.cloudfront.net` (CloudFront `E8U5DU2Z1LNKV`). Do not destroy while the walkthrough is still needed.
+**Done — 30 October 2026.** Deploy disabled; `infra/` destroy removed 41 resources; state-object versions cleared; `infra/bootstrap` destroy removed 4 resources. Site `https://d2pb1fsz4ljq3u.cloudfront.net` no longer resolves.
+
+To tear down again after a future restore:
 
 ```powershell
 # From project-7 root

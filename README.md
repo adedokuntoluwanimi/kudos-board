@@ -2,13 +2,13 @@
 
 The Kudos Board is a small public thank-you app built for the [AltSchool Project 7 brief](https://docs.google.com/document/d/1oY5sj65m7mdar7Fp3WSiI-hbV3hb70GFg2ZVsl-uuqU/edit?tab=t.0#heading=h.hjtjddg80460). Both components run on AWS. Terraform in [`infra/`](infra/) provisions all of it, and [GitHub Actions](.github/workflows/deploy.yml) deploys every push to `main` with no console steps.
 
-> **Status: live for Checkpoint 3 (30 October 2026).** Site: https://d2pb1fsz4ljq3u.cloudfront.net — CloudFront `E8U5DU2Z1LNKV`. Talk notes (AI usage, cost, security, retrospective): [`docs/checkpoint3-talk.md`](docs/checkpoint3-talk.md). Demo script: [`docs/checkpoint3-demo-script.md`](docs/checkpoint3-demo-script.md). Post-demo teardown: [`docs/checkpoint3-shutdown.md`](docs/checkpoint3-shutdown.md).
+> **Status: shut down after Checkpoint 3 (30 October 2026).** App stack (41 resources) and bootstrap (4 resources) destroyed; state bucket emptied and removed. Deploy workflow disabled. Former site `https://d2pb1fsz4ljq3u.cloudfront.net` is offline. Talk notes: [`docs/checkpoint3-talk.md`](docs/checkpoint3-talk.md). Demo script: [`docs/checkpoint3-demo-script.md`](docs/checkpoint3-demo-script.md). Restore later via the runbook below (bootstrap first).
 
 Short AI summary also lives in [`explanation`](explanation).
 
-## Current deployment (Checkpoint 3)
+## Checkpoint 3 deployment before shutdown
 
-**Live site:** https://d2pb1fsz4ljq3u.cloudfront.net
+**Former site (offline):** https://d2pb1fsz4ljq3u.cloudfront.net — CloudFront `E8U5DU2Z1LNKV`
 
 | Resource | Value |
 | --- | --- |
@@ -18,8 +18,8 @@ Short AI summary also lives in [`explanation`](explanation).
 | API | ECS Fargate service `kudos-api` on cluster `kudos-cluster` |
 | Load balancer | `kudos-alb` on HTTP port 80, reachable only from CloudFront's origin-facing IP range |
 | Database | DynamoDB `kudos-kudos` |
-| Terraform state | S3 `kudos-tfstate-996255343850-eu-west-1` |
-| CI/CD | GitHub Actions Deploy enabled; OIDC role `kudos-github-deploy-role` |
+| Terraform state | S3 `kudos-tfstate-996255343850-eu-west-1` (destroyed with bootstrap) |
+| CI/CD | GitHub Actions Deploy disabled after teardown |
 
 ## Checkpoint 2 deployment before shutdown
 
