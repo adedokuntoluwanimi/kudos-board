@@ -2,7 +2,7 @@
 
 The Kudos Board is a small public thank-you app built for the [AltSchool Project 7 brief](https://docs.google.com/document/d/1oY5sj65m7mdar7Fp3WSiI-hbV3hb70GFg2ZVsl-uuqU/edit?tab=t.0#heading=h.hjtjddg80460). Both components run on AWS. Terraform in [`infra/`](infra/) provisions all of it, and [GitHub Actions](.github/workflows/deploy.yml) deploys every push to `main` with no console steps.
 
-> **Status: shut down after Checkpoint 3 (30 October 2026).** App stack (41 resources) and bootstrap (4 resources) destroyed; state bucket emptied and removed. Deploy workflow disabled. Former site `https://d2pb1fsz4ljq3u.cloudfront.net` is offline. Talk notes: [`docs/checkpoint3-talk.md`](docs/checkpoint3-talk.md). Demo script: [`docs/checkpoint3-demo-script.md`](docs/checkpoint3-demo-script.md). Restore later via the runbook below (bootstrap first).
+> **Status: shut down after the final presentation (3–4 November 2026).** The restored app stack (41 resources) and bootstrap (4 resources) are destroyed; the state bucket and all 20 versions/delete markers are removed. Deploy is disabled. The final site `https://d2do4dhc3jjmov.cloudfront.net` is offline. Local state backups, source files and presentation artifacts are preserved. Details: [`docs/checkpoint3-shutdown.md`](docs/checkpoint3-shutdown.md). Restore only when requested, starting with bootstrap.
 
 Short AI summary also lives in [`explanation`](explanation).
 
